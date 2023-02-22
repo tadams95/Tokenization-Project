@@ -2,6 +2,9 @@ import React, { useReducer, useCallback, useEffect } from "react";
 import Web3 from "web3";
 import EthContext from "./EthContext";
 import { reducer, actions, initialState } from "./state";
+import KiloToken from "../../contracts/KiloToken.json";
+import KiloTokenSale from "../../contracts/KiloTokenSale.json";
+import KYCContract from "../../contracts/KYCContract.json";
 
 function EthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
