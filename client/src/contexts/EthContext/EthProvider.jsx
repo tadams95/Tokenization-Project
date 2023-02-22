@@ -2,39 +2,40 @@ import React, { useReducer, useCallback, useEffect } from "react";
 import Web3 from "web3";
 import EthContext from "./EthContext";
 import { reducer, actions, initialState } from "./state";
-// import KiloToken from "../../contracts/KiloToken.json";
-// import KiloTokenSale from "../../contracts/KiloTokenSale.json";
-// import KYCContract from "../../contracts/KYCContract.json";
 
 function EthProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const init = useCallback(
-    async artifact => {
-      if (artifact) {
-        const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
-        const accounts = await web3.eth.requestAccounts();
-        const networkID = await web3.eth.net.getId();
-        const { abi } = artifact;
-        let address, contract;
-        try {
-          address = artifact.networks[networkID].address;
-          contract = new web3.eth.Contract(abi, address);
-        } catch (err) {
-          console.error(err);
+  const init = useCallback(async (artifacts) => {
+    if (artifacts) {
+      const web3 = new Web3(Web3.givenProvider || "ws://localhost:8545");
+      const accounts = await web3.eth.requestAccounts();
+      const networkID = await web3.eth.net.getId();
+      let contracts = {};
+      try {
+        for (const [contractName, artifact] of Object.entries(artifacts)) {
+          const address = artifact.networks[networkID].address;
+          const contract = new web3.eth.Contract(artifact.abi, address);
+          contracts[contractName] = contract;
         }
-        dispatch({
-          type: actions.init,
-          data: { artifact, web3, accounts, networkID, contract }
-        });
+      } catch (err) {
+        contracts = null;
+        console.error(err);
       }
-    }, []);
-
+      dispatch({
+        type: actions.init,
+        data: { artifacts, web3, accounts, networkID, contracts },
+      });
+    }
+  }, []);
   useEffect(() => {
     const tryInit = async () => {
       try {
-        const artifact = require("../../contracts/Kilotoken.json");
-        init(artifact);
+        const artifacts = {
+          KiloToken: require("../../contracts/KiloToken.json"),
+          KiloTokenSale: require("../../contracts/KiloTokenSale.json")
+        };
+        init(artifacts);
       } catch (err) {
         console.error(err);
       }
@@ -43,23 +44,26 @@ function EthProvider({ children }) {
     tryInit();
   }, [init]);
 
+  //detecting changes
   useEffect(() => {
     const events = ["chainChanged", "accountsChanged"];
     const handleChange = () => {
-      init(state.artifact);
+      init(state.artifacts);
     };
 
-    events.forEach(e => window.ethereum.on(e, handleChange));
+    events.forEach((e) => window.ethereum.on(e, handleChange));
     return () => {
-      events.forEach(e => window.ethereum.removeListener(e, handleChange));
+      events.forEach((e) => window.ethereum.removeListener(e, handleChange));
     };
-  }, [init, state.artifact]);
+  }, [init, state.artifacts]);
 
   return (
-    <EthContext.Provider value={{
-      state,
-      dispatch
-    }}>
+    <EthContext.Provider
+      value={{
+        state,
+        dispatch,
+      }}
+    >
       {children}
     </EthContext.Provider>
   );
