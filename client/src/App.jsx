@@ -1,14 +1,15 @@
 import { EthProvider } from "./contexts/EthContext";
-import Intro from "./components/Intro/";
 import Footer from "./components/Footer";
+import Welcome from "./components/Intro/Welcome";
+import InputWhitelist from "./components/Intro/InputWhitelist";
 
 function App() {
   return (
     <EthProvider>
       <div id="App">
         <div className="container">
-          <Intro />
-
+          <Welcome />
+          <InputWhitelist />
           <Footer />
         </div>
       </div>
